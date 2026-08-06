@@ -1,0 +1,99 @@
+#!/bin/bash
+# Backup diário dos projetos que não tinham nenhum.
+#
+# Motivo (2026-07-28): existiam backups automáticos só de hub-fotos e movichat.
+# `base_manuais` é CÓPIA ÚNICA — os PDFs vieram do usuário e três deles já
+# sumiram do Downloads dele no mesmo dia. Se o disco falhar, não se reconstrói.
+#
+# Não inclui venv (reconstrói com pip) nem __pycache__.
+set -euo pipefail
+
+DESTINO="/home/claude/backups/projetos"
+RETENCAO_DIAS=14
+HOJE=$(date +%Y-%m-%d)
+mkdir -p "$DESTINO"
+
+erros=0
+
+empacotar() {
+    local nome="$1"
+    local origem="/home/claude/$nome"
+    local alvo="$DESTINO/${nome}_${HOJE}.tar.gz"
+
+    if [ ! -d "$origem" ]; then
+        echo "  $nome: pasta nao existe — pulando"
+        return
+    fi
+
+    # --ignore-failed-read para não abortar tudo se um arquivo sumir no meio
+    if tar -czf "$alvo.parcial" \
+            --exclude='venv' \
+            --exclude='__pycache__' \
+            --exclude='*.pyc' \
+            --exclude='node_modules' \
+            --exclude='.git' \
+            --ignore-failed-read \
+            -C /home/claude "$nome" 2>/dev/null; then
+        # só promove a definitivo se o tar abrir — backup corrompido é pior que nenhum
+        if tar -tzf "$alvo.parcial" >/dev/null 2>&1; then
+            mv "$alvo.parcial" "$alvo"
+            echo "  $nome: $(du -h "$alvo" | cut -f1)"
+        else
+            rm -f "$alvo.parcial"
+            echo "  $nome: FALHOU — arquivo gerado nao abre"
+            erros=$((erros + 1))
+        fi
+    else
+        rm -f "$alvo.parcial"
+        echo "  $nome: FALHOU ao empacotar"
+        erros=$((erros + 1))
+    fi
+}
+
+echo "=== backup $(date '+%Y-%m-%d %H:%M:%S') ==="
+empacotar base_manuais
+empacotar moviserver
+empacotar fpsl_weso
+empacotar suntech-diag
+empacotar IA_agente_Movichat
+empacotar movibot
+empacotar movizap_painel
+
+# 🚨 A rede de protecao tambem precisa de rede. `scripts/` guarda o gate de
+# segredo, este proprio backup e as ferramentas de auditoria; `docs/` guarda a
+# documentacao transversal. Ate 05/08 os dois viviam em uma copia so.
+empacotar docs
+empacotar scripts
+
+# Bancos SQLite: cópia consistente com .backup, não cp — cp durante escrita
+# pode gerar arquivo corrompido.
+for db in /home/claude/moviserver/data/moviserver.db /home/claude/fpsl_weso/data/fpsl.db /home/claude/movibot/data/movibot.db; do
+    if [ -f "$db" ]; then
+        nome=$(basename "$db" .db)
+        alvo="$DESTINO/${nome}_${HOJE}.db"
+        if sqlite3 "$db" ".backup '$alvo'" 2>/dev/null; then
+            # confirma que o backup abre e responde
+            if sqlite3 "$alvo" "PRAGMA integrity_check;" 2>/dev/null | grep -q '^ok$'; then
+                echo "  $nome.db: $(du -h "$alvo" | cut -f1) (integridade ok)"
+            else
+                echo "  $nome.db: FALHOU integrity_check"
+                erros=$((erros + 1))
+            fi
+        else
+            echo "  $nome.db: FALHOU no .backup"
+            erros=$((erros + 1))
+        fi
+    fi
+done
+
+# retenção
+apagados=$(find "$DESTINO" -type f \( -name '*.tar.gz' -o -name '*.db' \) \
+    -mtime +$RETENCAO_DIAS -print -delete | wc -l)
+[ "$apagados" -gt 0 ] && echo "  retencao: $apagados arquivo(s) com mais de ${RETENCAO_DIAS}d removido(s)"
+
+echo "  total em disco: $(du -sh "$DESTINO" | cut -f1)"
+if [ "$erros" -gt 0 ]; then
+    echo "=== CONCLUIDO COM $erros ERRO(S) ==="
+    exit 1
+fi
+echo "=== ok ==="

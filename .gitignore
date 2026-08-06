@@ -1,0 +1,46 @@
+# movisat-operacao -- a rede que protege os outros cinco repositorios.
+#
+# 🚨 Este repositorio guarda FERRAMENTA, nunca dado nem segredo. Se algum dia
+# um script precisar de credencial, ela vai no .env do projeto que ele opera --
+# nunca aqui.
+
+# segredo, em qualquer forma
+.env
+.env.*
+*.pem
+*.key
+
+# 🚨 NÃO usar padrão amplo por SUBSTRING no nome. A primeira versão deste
+# arquivo tinha `*segredos*`, para barrar algo como `segredos.txt` -- e engoliu
+# `gate_segredos.py` e `auditar_segredos.py`, ou seja, exatamente as duas
+# ferramentas que existem para impedir vazamento. O repositório teria nascido
+# sem a trava cuja perda é o desastre que ele existe para evitar.
+#
+# É a mesma família do incidente do `.env.bak` de 04/08, ao contrário: lá o
+# padrão foi estreito demais e deixou passar; aqui foi largo demais e escondeu.
+# A regra: o .gitignore filtra por EXTENSÃO e por nome EXATO. Quem julga
+# conteúdo é o `gate_segredos.py`, que lê o arquivo.
+
+# 🚨 backup de .env foi exatamente o incidente de 04/08: o .gitignore protegia
+# o NOME `.env`, e o `.env.bak` passou.
+*.bak
+*.bak_*
+*~
+
+# saida de execucao: log e relatorio sao dado, nao ferramenta
+*.log
+logs/
+*.csv
+*.json
+!package.json
+
+# banco e dump
+*.db
+*.sqlite
+*.sql
+
+# python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
