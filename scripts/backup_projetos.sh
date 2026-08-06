@@ -61,9 +61,14 @@ empacotar movizap_painel
 
 # 🚨 A rede de protecao tambem precisa de rede. `scripts/` guarda o gate de
 # segredo, este proprio backup e as ferramentas de auditoria; `docs/` guarda a
-# documentacao transversal. Ate 05/08 os dois viviam em uma copia so.
-empacotar docs
-empacotar scripts
+# documentacao transversal.
+#
+# 🚨 MUDOU EM 06/08: as duas pastas foram MOVIDAS para movisat-operacao (6o
+# repositorio), e /home/claude/docs e /home/claude/scripts viraram LINKS
+# SIMBOLICOS. `tar` nao segue link: `empacotar docs` passaria a guardar o link
+# e nao o conteudo -- um backup de 21 arquivos viraria um backup de 2 bytes,
+# sem erro nenhum. Empacotar a pasta real resolve os dois de uma vez.
+empacotar movisat-operacao
 
 # Bancos SQLite: cópia consistente com .backup, não cp — cp durante escrita
 # pode gerar arquivo corrompido.

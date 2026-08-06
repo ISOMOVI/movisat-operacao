@@ -11,7 +11,8 @@
 # A trava roda ANTES do `git add`. Repositorio bloqueado e pulado; os outros
 # seguem. Falha do proprio gate tambem bloqueia -- falha fechado.
 
-REPOS="/home/claude/moviserver /home/claude/movibot /home/claude/IA_agente_Movichat /home/claude/fpsl_weso /home/claude/movizap_painel"
+# movisat-operacao entrou em 06/08: e o 6o repositorio, e guarda ESTE script.
+REPOS="/home/claude/moviserver /home/claude/movibot /home/claude/IA_agente_Movichat /home/claude/fpsl_weso /home/claude/movizap_painel /home/claude/movisat-operacao"
 GATE="/home/claude/scripts/gate_segredos.py"
 HOJE=$(date +%Y-%m-%d)
 TS=$(date +'%Y-%m-%d %H:%M:%S')
