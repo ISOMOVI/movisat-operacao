@@ -228,3 +228,88 @@ Hoje:         = o objetivo, nos quatro painéis
 Por quê:      medido: com --workers 2 o MoviChat não bloqueou em 6 tentativas
 Reavaliar se: virar gargalo -- aí vai para o Redis que já roda no host
 ```
+
+---
+
+## Login nunca exige caixa exata — os quatro painéis (2026-08-07)
+
+### O que aconteceu
+
+O dono do sistema ficou de fora do FPSL **com a senha certa**. Cinco tentativas
+recusadas, e aí o limite de tentativas travou por 5 minutos.
+
+A busca do usuário era `WHERE login = ?`, **exata**. Digitar `Admin` devolvia
+401 **sem nem chegar no bcrypt**, e a mensagem única — que existe por um bom
+motivo — tornava impossível desconfiar.
+
+### 🚨 O log destruía a evidência
+
+`ratelimit.chave_de` normaliza com `casefold`. O log registrava
+`45.179.0.84|admin` **mesmo quando o digitado era `Admin`**.
+
+Quem investigasse veria o login certo e concluiria "senha errada". Só se sai
+disso conferindo a senha **contra o hash** — foi o que fez o diagnóstico virar.
+
+> Normalizar no log apaga a diferença que o log existe para mostrar.
+
+### A regra, agora igual nos quatro
+
+```
+lower(login)  +  .strip()   na busca
+índice único em lower(login) na escrita
+```
+
+O índice não é detalhe: ignorar a caixa na **leitura** sem garantir unicidade
+na **escrita** deixaria criar `Admin` ao lado de `admin`, e aí a autenticação
+fica ambígua — duas contas, senhas diferentes, e o sintoma seria *"às vezes
+entra, às vezes não"*.
+
+| Painel | Antes de 07/08 | Agora |
+|---|---|---|
+| MoviServer | `COLLATE NOCASE`, sem trim | + trim, + índice único |
+| MoviZap | `lower()` desde 05/08, sem trim | + trim (índice já existia) |
+| FPSL | 🚨 busca exata, **sem índice nenhum** | corrigido |
+| MoviChat | 🚨 busca exata em **3 caminhos** | corrigido |
+
+O MoviChat era o pior: `AdminUser`, admin do `.env` e **`ClientUser`** — o
+login dos **6 usuários de empresa** (`xomv`, `motohelp`, `xomv_op1`,
+`damascopenna`, `removerde`, `tessile`), todos minúsculos. Qualquer um deles
+digitando com inicial maiúscula levava 401 e travava 5 minutos, com cliente do
+outro lado e ninguém para diagnosticar.
+
+⚠️ Os formulários já tinham `autocapitalize="off"` — e mesmo assim aconteceu.
+Teclado de celular, gerenciador de senha e copiar-colar furam isso. **A defesa
+tem que estar no servidor.**
+
+### 🚨 A lição que vale mais que a correção
+
+A ferramenta que pegaria isso **já existia**: `scripts/verificar_login.py`,
+escrita em 05/08 por causa deste mesmo defeito no MoviZap. Ela tinha
+`127.0.0.1:8008` como alvo fixo e **nunca foi apontada para os outros três**.
+
+O defeito não escapou da auditoria. **Escapou do alcance dela.**
+
+Em 05/08 acharam no MoviZap e corrigiram no MoviZap. Ninguém perguntou "onde
+mais esse código mora?" — embora a mesma auditoria tenha feito exatamente isso
+para o limite de tentativas.
+
+**Regra que ficou: defeito achado em um painel vira verificação nos outros
+três, na mesma sessão.** Os quatro compartilham a linhagem do código.
+
+### A ferramenta, reescrita em 07/08
+
+`scripts/verificar_login.py` roda nos **quatro por padrão**. Prova que o login
+é encontrado **sem conhecer a senha**: tenta variações com senha errada e mede
+o **tempo** — abaixo de 20 ms o bcrypt não rodou, logo o usuário não foi
+encontrado.
+
+Também corrigido nela: lia **404 como "usuário não encontrado"**. Com a rota
+errada ela gritava FALHA com confiança total. Agora 404, 429 e "sem resposta"
+têm nome próprio.
+
+> Auditoria que confunde endereço errado com defeito gasta o próprio crédito,
+> e aí ninguém mais roda.
+
+⚠️ Cada execução gasta 4 tentativas por painel; o limite trava em 5 por 5 min.
+Zerar depois: `delete from travas; delete from falhas` no `ratelimit.db` de
+cada projeto.

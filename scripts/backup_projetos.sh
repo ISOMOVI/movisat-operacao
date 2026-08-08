@@ -59,6 +59,17 @@ empacotar IA_agente_Movichat
 empacotar movibot
 empacotar movizap_painel
 
+# 🚨 NOVO EM 07/08: projeto de prospeccao (webhook da Cloud API da Meta).
+# Ainda NAO tem repositorio git -- depende de o usuario criar o remoto na
+# ISOMOVI, como fez com os outros seis. Ate la, este backup e a UNICA copia:
+# app.py, .env e o sqlite com os payloads crus.
+empacotar prospeccao
+
+# 🚨 NOVO EM 07/08: Evolution dedicada a prospecao. O .env dela guarda a chave
+# global QUE FOI ENTREGUE ao servico externo e a senha do banco -- perder isso
+# e perder o acesso ao proprio container. Nao tem git ainda.
+empacotar evolution_prosp
+
 # 🚨 A rede de protecao tambem precisa de rede. `scripts/` guarda o gate de
 # segredo, este proprio backup e as ferramentas de auditoria; `docs/` guarda a
 # documentacao transversal.
