@@ -12,7 +12,7 @@
 # seguem. Falha do proprio gate tambem bloqueia -- falha fechado.
 
 # movisat-operacao entrou em 06/08: e o 6o repositorio, e guarda ESTE script.
-REPOS="/home/claude/moviserver /home/claude/movibot /home/claude/IA_agente_Movichat /home/claude/fpsl_weso /home/claude/movizap_painel /home/claude/movisat-operacao"
+REPOS="/home/claude/moviserver /home/claude/movibot /home/claude/IA_agente_Movichat /home/claude/fpsl_weso /home/claude/movizap_painel /home/claude/movisat-operacao /home/claude/prospeccao"
 GATE="/home/claude/scripts/gate_segredos.py"
 HOJE=$(date +%Y-%m-%d)
 TS=$(date +'%Y-%m-%d %H:%M:%S')
