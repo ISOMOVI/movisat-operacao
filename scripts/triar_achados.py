@@ -13,7 +13,6 @@ REPOS = [
     "/home/claude/IA_agente_Movichat",
     "/home/claude/fpsl_weso",
     "/home/claude/moviserver",
-    "/home/claude/movibot",
     "/home/claude/movizap_painel",
 ]
 

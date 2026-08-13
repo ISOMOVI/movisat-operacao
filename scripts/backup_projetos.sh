@@ -56,7 +56,6 @@ empacotar moviserver
 empacotar fpsl_weso
 empacotar suntech-diag
 empacotar IA_agente_Movichat
-empacotar movibot
 empacotar movizap_painel
 
 # 🚨 NOVO EM 07/08: projeto de prospeccao (webhook da Cloud API da Meta).
@@ -83,7 +82,7 @@ empacotar movisat-operacao
 
 # Bancos SQLite: cópia consistente com .backup, não cp — cp durante escrita
 # pode gerar arquivo corrompido.
-for db in /home/claude/moviserver/data/moviserver.db /home/claude/fpsl_weso/data/fpsl.db /home/claude/movibot/data/movibot.db; do
+for db in /home/claude/moviserver/data/moviserver.db /home/claude/fpsl_weso/data/fpsl.db; do
     if [ -f "$db" ]; then
         nome=$(basename "$db" .db)
         alvo="$DESTINO/${nome}_${HOJE}.db"

@@ -15,7 +15,6 @@ REPOS = [
     "/home/claude/fpsl_weso",
     "/home/claude/moviserver",
     "/home/claude/IA_agente_Movichat",
-    "/home/claude/movibot",
 ]
 
 BLOCO = """

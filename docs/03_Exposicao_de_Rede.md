@@ -130,3 +130,85 @@ curl -s -o /dev/null -w "%{http_code}" http://<ip-publico>:<porta>/
 # 4. o limite morde de verdade?
 for i in $(seq 1 30); do curl -s -o /dev/null -w "%{http_code} " https://<site>/; done
 ```
+
+---
+
+# 2026-08-13 — três portas fechadas e o MoviBot eliminado
+
+Medido **de fora** (`Test-NetConnection` da máquina do usuário), que é a única
+prova válida. Antes: `22, 80, 443, 8003, 9000` abertas. Depois: `22, 80, 443,
+9000`.
+
+## 8003 — MoviChat sem TLS, por IP cru
+
+O `ia-agente-movichat.conf` servia o MoviChat inteiro em `listen 8003` com
+`server_name 212.85.17.184`, **sem SSL**, apontando para o mesmo
+`127.0.0.1:8002` que o `movichat.movisat.com.br` já servia com TLS. Era um
+caminho duplicado em texto puro, com regra `8003/tcp ALLOW Anywhere` explícita
+no ufw.
+
+🚨 **O tráfego era só varredura.** No `access.log`, requisições com Host igual
+ao IP cru: 7 em 12/08, 0 em 13/08 — e uma delas era a própria sonda da
+auditoria. O resto era Palo Alto Cortex Xpanse, Netcraft, AhrefsBot e `curl`.
+
+⚠️ Restam citações em documentação (`IA_agente_Movichat/PROJETO.md`) e num
+`NOTIFICACAO_EMAIL/exemplo_uso.py` — **nenhum em execução**: o
+`NOTIFICACAO_EMAIL` não tem cron nem processo.
+
+## 8082 — o bloco do Evolution que sobrou
+
+`movizap_evolution.conf`, `listen 8082` → `127.0.0.1:8081`. Já estava
+inalcançável desde 11/08, mas **só porque não havia regra de ALLOW** — o bloco
+continuava montado. Era uma arma carregada com a trava por fora: uma linha de
+ufw distraída reexpunha na hora.
+
+🚨 **Zero referências no código.** MoviZap e MoviBot sempre apontaram o
+Evolution para `http://localhost:8081`, nunca para a 8082.
+
+## MoviBot — eliminado
+
+Parado desde 23/07 (4 sessões, 31 linhas de `audit_log`, nada depois). O único
+tráfego que recebia era varredura batendo em `/` e `/robots.txt`. Substituído
+pelo MoviZap, que é quem recebe os webhooks do Evolution hoje.
+
+**A ordem importou.** O `rm -rf` sozinho quebraria seis coisas:
+
+| Onde | O quê | Resolvido |
+|---|---|---|
+| `movizap_painel/scripts/evo.sh:6` | lia o `.env` do MoviBot | repontado para o `.env` do MoviZap |
+| `backup_projetos.sh:59 e :86` | empacotava o projeto e o `.db` | removido das duas listas |
+| `git_autocommit.sh:15` | estava nos 7 repositórios | removido |
+| `auditar_segredos.py`, `ignorar_wal.py`, `triar_achados.py` | listavam o caminho | removidos |
+| nginx | `movibot.movisat.com.br` daria 502 | site desativado |
+| ufw | `8006 ALLOW 172.18.0.0/16` | regra removida |
+
+⚠️ **`movibot.service` era unit `systemd --user`, `enabled` e `active`** — não
+aparecia em `systemctl list-unit-files` no escopo do sistema. Parado e
+desabilitado antes de apagar.
+
+🚨 **O `.env` NÃO estava no `.tar.gz`** (só o `.bak` de 22/07). Era a única
+cópia em disco do `CHATWOOT_API_TOKEN`, do `MOVIBOT_SECRET_KEY` e das quatro
+`FORM_URL_*` do fluxo contratual. Preservado em
+`backups/movibot_env_final_2026-08-13.bak`, modo 600.
+
+📁 A lógica de triagem foi extraída antes, para
+`movizap_painel/docs/15_Logica_de_Fluxo_do_Atendimento.md`.
+
+## Reversão
+
+Nada foi apagado do nginx: os três blocos estão em
+`/etc/nginx/sites-desativados/`. O código do MoviBot está em
+`ISOMOVI/movisat-movibot` (SHA `84f2c640`, idêntico ao remoto) e nos `.tar.gz`
+diários.
+
+## O que continua aberto, e por quê
+
+| Porta | Regra | Motivo |
+|---|---|---|
+| 9000 | `ALLOW Anywhere` | intake TCP dos rastreadores Suntech — precisa aceitar conexão da rede móvel |
+| 8005 | `ALLOW 172.18.0.0/16` | Docker → FPSL |
+| 9002 | `ALLOW 45.179.3.219` | WebSocket do monitor Suntech, restrito ao operador |
+
+⚠️ **A 9000 não autentica** — o protocolo Suntech não prevê. Qualquer um pode
+conectar e enviar pacote com IMEI forjado. É limitação do protocolo, e o
+alcance é o `suntech-diag`.
