@@ -153,6 +153,29 @@ git show origin/main:<arquivo> | grep ...     # o segredo saiu MESMO?
 
 ---
 
+## 9. 🚨 Árvore limpa não significa sincronizado (2026-08-14)
+
+O `git_autocommit.sh` das 23:30 fazia `continue` assim que via
+`git status --porcelain` vazio. Consequência: **commit feito à mão nunca era
+empurrado**. O `fpsl_weso` acumulou **13 commits que existiam só na VPS**, e o
+log dizia `sem mudancas` todo dia — parecia estar tudo em ordem.
+
+⚠️ **A automação media a coisa errada.** "Nada para commitar" e "nada para
+enviar" são perguntas diferentes, e só a primeira estava sendo feita. Quem lia o
+log não tinha como perceber: a linha de sucesso e a linha do buraco eram a
+mesma.
+
+Corrigido: com a árvore limpa, o script ainda confere
+`git rev-list --count @{u}..HEAD` e **empurra se estiver adiantado**. E ganhou
+contador próprio de `NAO_EMPURRADOS`, com aviso no fim do log — falha de push
+antes só aparecia numa linha no meio, fácil de não ver.
+
+**Como conferir à mão, em qualquer repositório:**
+
+```bash
+git rev-list --count @{u}..HEAD   # commits que ainda não saíram daqui
+```
+
 ## Antes de todo primeiro push de um repositório novo
 
 1. `git ls-files | grep -iE 'env|secret|senha|key|\.bak'`
