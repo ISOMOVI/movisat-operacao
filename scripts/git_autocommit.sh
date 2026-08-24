@@ -18,7 +18,13 @@
 # limpa com commit local adiantado ainda faz push.
 
 # movisat-operacao entrou em 06/08: e o 6o repositorio, e guarda ESTE script.
-REPOS="/home/claude/moviserver /home/claude/IA_agente_Movichat /home/claude/fpsl_weso /home/claude/movizap_painel /home/claude/movisat-operacao /home/claude/prospeccao"
+# 2026-08-24: os dois CACHES entraram. Eles nao guardam codigo do
+# painel, guardam os scripts que refazem as bases lidas por ele -- e
+# eram copia unica na VPS, fora do git e fora do backup_projetos.sh.
+# O banco de cada um fica de fora pelo .gitignore: e dado gerado.
+# ⚠️ Enquanto nao houver remoto na ISOMOVI, o push falha e o log diz
+# "commit que NAO saiu da VPS" -- e verdade, nao ruido.
+REPOS="/home/claude/moviserver /home/claude/IA_agente_Movichat /home/claude/fpsl_weso /home/claude/movizap_painel /home/claude/movisat-operacao /home/claude/prospeccao /home/claude/weso_cache /home/claude/harmonit_cache"
 GATE="/home/claude/scripts/gate_segredos.py"
 HOJE=$(date +%Y-%m-%d)
 TS=$(date +'%Y-%m-%d %H:%M:%S')
