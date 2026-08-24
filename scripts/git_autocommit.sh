@@ -18,16 +18,7 @@
 # limpa com commit local adiantado ainda faz push.
 
 # movisat-operacao entrou em 06/08: e o 6o repositorio, e guarda ESTE script.
-# 2026-08-24: os dois CACHES entraram. Eles nao guardam codigo do
-# painel, guardam os scripts que refazem as bases lidas por ele -- e
-# eram copia unica na VPS, fora do git e fora do backup_projetos.sh.
-# O banco de cada um fica de fora pelo .gitignore: e dado gerado.
-# 🚨 ENQUANTO NAO HOUVER REMOTO NA ISOMOVI, ELES FICAM SO AQUI E O
-# LOG NAO RECLAMA: sem upstream o  devolve 0,
-# entao o script diz "sem mudancas" e nunca tenta empurrar. E o
-# mesmo ponto cego de 14/08 -- arvore limpa nao significa
-# sincronizado -- agora pelo lado de quem nem tem para onde sincronizar.
-REPOS="/home/claude/moviserver /home/claude/IA_agente_Movichat /home/claude/fpsl_weso /home/claude/movizap_painel /home/claude/movisat-operacao /home/claude/prospeccao /home/claude/weso_cache /home/claude/harmonit_cache"
+REPOS="/home/claude/moviserver /home/claude/IA_agente_Movichat /home/claude/fpsl_weso /home/claude/movizap_painel /home/claude/movisat-operacao /home/claude/prospeccao"
 GATE="/home/claude/scripts/gate_segredos.py"
 HOJE=$(date +%Y-%m-%d)
 TS=$(date +'%Y-%m-%d %H:%M:%S')
