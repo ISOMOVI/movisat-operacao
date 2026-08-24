@@ -22,8 +22,11 @@
 # painel, guardam os scripts que refazem as bases lidas por ele -- e
 # eram copia unica na VPS, fora do git e fora do backup_projetos.sh.
 # O banco de cada um fica de fora pelo .gitignore: e dado gerado.
-# ⚠️ Enquanto nao houver remoto na ISOMOVI, o push falha e o log diz
-# "commit que NAO saiu da VPS" -- e verdade, nao ruido.
+# 🚨 ENQUANTO NAO HOUVER REMOTO NA ISOMOVI, ELES FICAM SO AQUI E O
+# LOG NAO RECLAMA: sem upstream o  devolve 0,
+# entao o script diz "sem mudancas" e nunca tenta empurrar. E o
+# mesmo ponto cego de 14/08 -- arvore limpa nao significa
+# sincronizado -- agora pelo lado de quem nem tem para onde sincronizar.
 REPOS="/home/claude/moviserver /home/claude/IA_agente_Movichat /home/claude/fpsl_weso /home/claude/movizap_painel /home/claude/movisat-operacao /home/claude/prospeccao /home/claude/weso_cache /home/claude/harmonit_cache"
 GATE="/home/claude/scripts/gate_segredos.py"
 HOJE=$(date +%Y-%m-%d)
