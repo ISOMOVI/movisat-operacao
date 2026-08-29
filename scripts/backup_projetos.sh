@@ -26,12 +26,25 @@ empacotar() {
     fi
 
     # --ignore-failed-read para não abortar tudo se um arquivo sumir no meio
+    # 🚨 `.env` NAO ENTRA NO BACKUP (28/08, decisao dele). Os tars carregavam
+    # 7 arquivos `.env` -- movizap, moviserver, fpsl (2), movichat (2) e
+    # prospeccao --, e com 15 copias diarias eram ~105 arquivos de credencial
+    # parados em disco. O diretorio e `drwx------`, entao o risco nao e leitor
+    # local: e o tar SAIR DA MAQUINA (copia, download, restauracao em outro
+    # lugar) levando senha de banco e chave de API junto.
+    #
+    # ⚠️ O QUE ISSO CUSTA, E E PRECISO SABER: restaurar um projeto a partir do
+    # backup NAO traz o `.env`. A aplicacao nao sobe ate alguem recriar o
+    # arquivo. O segredo passa a existir em UM lugar so -- o `.env` vivo, que e
+    # `-rw-------` -- e a recuperacao dele deixou de ser problema do backup.
     if tar -czf "$alvo.parcial" \
             --exclude='venv' \
             --exclude='__pycache__' \
             --exclude='*.pyc' \
             --exclude='node_modules' \
             --exclude='.git' \
+            --exclude='.env' \
+            --exclude='.env.*' \
             --ignore-failed-read \
             -C /home/claude "$nome" 2>/dev/null; then
         # só promove a definitivo se o tar abrir — backup corrompido é pior que nenhum
