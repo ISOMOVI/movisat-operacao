@@ -41,6 +41,17 @@ EXEMPLO = re.compile(
     r"(?i)(\.\.\.|xxxx|<oculto>|abc123|troque|exemplo|placeholder|"
     r"\{[^}]*\}|\$\{|<[a-z_ ]+>|cole a chave)")
 
+# 🚨 Adicionado em 31/08, autorizado por ele. "PUBLISHABLE_KEY" e o nome que
+# o proprio Supabase da a metade do par que e SEGURA DE EXPOR -- vai no
+# bundle do navegador por desenho (o oposto de "secret key"). Sem isto, todo
+# projeto remixado do Lovable ficava bloqueado para sempre, so por isso.
+#
+# Restrito de proposito: so afasta o alarme da regra generica de "linha .env
+# com segredo" (abaixo). Um `sk-...`, token de GitHub, chave AWS ou chave
+# privada de verdade numa linha assim CONTINUAM sendo pegos -- essa excecao
+# nao os desliga, so tira o falso positivo do nome da variavel.
+LINHA_PUBLICA = re.compile(r"(?i)PUBLISHABLE_KEY=")
+
 BINARIOS = (".png", ".jpg", ".jpeg", ".gif", ".ico", ".pdf", ".woff", ".woff2",
             ".ttf", ".zip", ".gz", ".bundle", ".map", ".lock")
 
@@ -74,6 +85,8 @@ for relativo in listagem.stdout.splitlines():
         for rotulo, padrao in PADROES:
             m = padrao.search(linha)
             if m:
+                if rotulo == "linha .env com segredo" and LINHA_PUBLICA.search(linha):
+                    continue  # nome da variavel diz explicitamente "seguro expor"
                 achados.append((relativo, n, rotulo,
                                 hashlib.sha256(m.group(0).encode()).hexdigest()[:8]))
                 break

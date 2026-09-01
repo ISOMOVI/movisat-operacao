@@ -37,6 +37,12 @@ empacotar() {
     # backup NAO traz o `.env`. A aplicacao nao sobe ate alguem recriar o
     # arquivo. O segredo passa a existir em UM lugar so -- o `.env` vivo, que e
     # `-rw-------` -- e a recuperacao dele deixou de ser problema do backup.
+    #
+    # 🚨 `.pgpass` entrou em 31/08: senha de banco em formato
+    # host:porta:banco:usuario:senha, que a trava de segredo (gate_segredos.py)
+    # NAO detecta -- o padrao dela e KEY=valor ou URL com senha, nao esse
+    # formato de dois-pontos. Sem esta exclusao, o tar levaria a senha para
+    # fora da VPS -- inclusive para C:\code\BACKUP, que sincroniza sozinho.
     if tar -czf "$alvo.parcial" \
             --exclude='venv' \
             --exclude='__pycache__' \
@@ -45,6 +51,7 @@ empacotar() {
             --exclude='.git' \
             --exclude='.env' \
             --exclude='.env.*' \
+            --exclude='.pgpass' \
             --ignore-failed-read \
             -C /home/claude "$nome" 2>/dev/null; then
         # só promove a definitivo se o tar abrir — backup corrompido é pior que nenhum
@@ -81,6 +88,14 @@ empacotar prospeccao
 # global QUE FOI ENTREGUE ao servico externo e a senha do banco -- perder isso
 # e perder o acesso ao proprio container. Nao tem git ainda.
 empacotar evolution_prosp
+
+# 🚨 NOVOS EM 31/08: os tres projetos remixados do Lovable, em migracao para
+# a VPS. Cada um ja tem banco Postgres real provisionado (.env.db/.pgpass,
+# excluidos acima) e docs/DB_SCHEMA.sql testado. Ainda sem servico proprio
+# rodando -- so codigo + documentacao + credencial de banco.
+empacotar lead-king
+empacotar diagnostico-vibe
+empacotar concorrentes
 
 # 🚨 A rede de protecao tambem precisa de rede. `scripts/` guarda o gate de
 # segredo, este proprio backup e as ferramentas de auditoria; `docs/` guarda a

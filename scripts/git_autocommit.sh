@@ -18,7 +18,15 @@
 # limpa com commit local adiantado ainda faz push.
 
 # movisat-operacao entrou em 06/08: e o 6o repositorio, e guarda ESTE script.
-REPOS="/home/claude/moviserver /home/claude/IA_agente_Movichat /home/claude/fpsl_weso /home/claude/movizap_painel /home/claude/movisat-operacao /home/claude/prospeccao"
+#
+# 🚨 3 NOVOS EM 31/08: lead-king, diagnostico-vibe, concorrentes -- projetos
+# remixados do Lovable, em migracao para a VPS. O .env ORIGINAL de cada um
+# (vindo do proprio remix, so com a anon key publica do Supabase) BATE no
+# padrao da trava (`*_KEY=...`) e vai continuar bloqueando o commit todos os
+# dias ate alguem decidir: ignorar esse .env especifico, ou mover a chave
+# pra fora dele. Ate la, "BLOQUEADO" no log destes tres e o esperado -- nao
+# e falha do gate, e falha fechado funcionando.
+REPOS="/home/claude/moviserver /home/claude/IA_agente_Movichat /home/claude/fpsl_weso /home/claude/movizap_painel /home/claude/movisat-operacao /home/claude/prospeccao /home/claude/lead-king /home/claude/diagnostico-vibe /home/claude/concorrentes"
 GATE="/home/claude/scripts/gate_segredos.py"
 HOJE=$(date +%Y-%m-%d)
 TS=$(date +'%Y-%m-%d %H:%M:%S')
