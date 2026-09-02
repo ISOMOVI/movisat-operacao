@@ -20,13 +20,27 @@
 # movisat-operacao entrou em 06/08: e o 6o repositorio, e guarda ESTE script.
 #
 # 🚨 3 NOVOS EM 31/08: lead-king, diagnostico-vibe, concorrentes -- projetos
+# 🚨 01/09: os 3 SAIRAM DESTE SCRIPT -- decisao dele. Mudaram para
+#    /home/claude/imagohub/ e sao do ImagoHub, nao do Movisat: vao para a org
+#    ISDOOSG. Enquanto os repositorios nao existirem em ISDOOSG, o remote deles
+#    ainda aponta para ISOMOVI, e um push automatico levaria o trabalho para a
+#    org errada. Por isso ficam de fora ate a troca de remote.
+#
+#    ⚠️ O TRABALHO DELES NAO ESTA SENDO COMMITADO. O que protege enquanto isso
+#    e o backup_projetos.sh das 02:00, que empacota os 3 (como imagohub/<nome>).
+#
+#    PARA RELIGAR, depois de criar os repositorios em ISDOOSG e trocar o remote
+#    para git@github-imago:ISDOOSG/<repo>.git, devolver ao REPOS:
+#      /home/claude/imagohub/lead-king
+#      /home/claude/imagohub/diagnostico-vibe
+#      /home/claude/imagohub/concorrentes
 # remixados do Lovable, em migracao para a VPS. O .env ORIGINAL de cada um
 # (vindo do proprio remix, so com a anon key publica do Supabase) BATE no
 # padrao da trava (`*_KEY=...`) e vai continuar bloqueando o commit todos os
 # dias ate alguem decidir: ignorar esse .env especifico, ou mover a chave
 # pra fora dele. Ate la, "BLOQUEADO" no log destes tres e o esperado -- nao
 # e falha do gate, e falha fechado funcionando.
-REPOS="/home/claude/moviserver /home/claude/IA_agente_Movichat /home/claude/fpsl_weso /home/claude/movizap_painel /home/claude/movisat-operacao /home/claude/prospeccao /home/claude/lead-king /home/claude/diagnostico-vibe /home/claude/concorrentes"
+REPOS="/home/claude/moviserver /home/claude/IA_agente_Movichat /home/claude/fpsl_weso /home/claude/movizap_painel /home/claude/movisat-operacao /home/claude/prospeccao /home/claude/imagohub/lead-king /home/claude/imagohub/diagnostico-vibe /home/claude/imagohub/concorrentes /home/claude/hub-fotos"
 GATE="/home/claude/scripts/gate_segredos.py"
 HOJE=$(date +%Y-%m-%d)
 TS=$(date +'%Y-%m-%d %H:%M:%S')

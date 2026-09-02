@@ -18,7 +18,7 @@ erros=0
 empacotar() {
     local nome="$1"
     local origem="/home/claude/$nome"
-    local alvo="$DESTINO/${nome}_${HOJE}.tar.gz"
+    local alvo="$DESTINO/$(basename "$nome")_${HOJE}.tar.gz"
 
     if [ ! -d "$origem" ]; then
         echo "  $nome: pasta nao existe — pulando"
@@ -93,9 +93,9 @@ empacotar evolution_prosp
 # a VPS. Cada um ja tem banco Postgres real provisionado (.env.db/.pgpass,
 # excluidos acima) e docs/DB_SCHEMA.sql testado. Ainda sem servico proprio
 # rodando -- so codigo + documentacao + credencial de banco.
-empacotar lead-king
-empacotar diagnostico-vibe
-empacotar concorrentes
+empacotar imagohub/lead-king
+empacotar imagohub/diagnostico-vibe
+empacotar imagohub/concorrentes
 
 # 🚨 A rede de protecao tambem precisa de rede. `scripts/` guarda o gate de
 # segredo, este proprio backup e as ferramentas de auditoria; `docs/` guarda a
