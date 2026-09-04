@@ -40,7 +40,7 @@
 # dias ate alguem decidir: ignorar esse .env especifico, ou mover a chave
 # pra fora dele. Ate la, "BLOQUEADO" no log destes tres e o esperado -- nao
 # e falha do gate, e falha fechado funcionando.
-REPOS="/home/claude/moviserver /home/claude/IA_agente_Movichat /home/claude/fpsl_weso /home/claude/movizap_painel /home/claude/movisat-operacao /home/claude/prospeccao /home/claude/imagohub/lead-king /home/claude/imagohub/diagnostico-vibe /home/claude/imagohub/concorrentes /home/claude/hub-fotos"
+REPOS="/home/claude/moviserver /home/claude/IA_agente_Movichat /home/claude/fpsl_weso /home/claude/movizap_painel /home/claude/movisat-operacao /home/claude/prospeccao /home/claude/imagohub/lead-king /home/claude/imagohub/diagnostico-vibe /home/claude/imagohub/concorrentes /home/claude/imagohub/jurisprudencia /home/claude/hub-fotos"
 GATE="/home/claude/scripts/gate_segredos.py"
 HOJE=$(date +%Y-%m-%d)
 TS=$(date +'%Y-%m-%d %H:%M:%S')

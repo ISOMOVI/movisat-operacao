@@ -96,6 +96,7 @@ empacotar evolution_prosp
 empacotar imagohub/lead-king
 empacotar imagohub/diagnostico-vibe
 empacotar imagohub/concorrentes
+empacotar imagohub/jurisprudencia
 
 # 🚨 A rede de protecao tambem precisa de rede. `scripts/` guarda o gate de
 # segredo, este proprio backup e as ferramentas de auditoria; `docs/` guarda a
