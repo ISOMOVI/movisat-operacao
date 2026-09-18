@@ -212,3 +212,106 @@ diários.
 ⚠️ **A 9000 não autentica** — o protocolo Suntech não prevê. Qualquer um pode
 conectar e enviar pacote com IMEI forjado. É limitação do protocolo, e o
 alcance é o `suntech-diag`.
+
+---
+
+## 18/09 — `prospeccaoia.movisat.com.br` e a 4a Evolution
+
+🔵 **Decisao dele:** *"essa com ia vou montar outro DNS so para ela, a que
+esta funcionando permanece como a prospecta-completa,
+prospeccaoia.movisat.com.br"*.
+
+| Site | Porta interna | Protecao |
+|---|---|---|
+| `prospeccaoia.movisat.com.br` | **8084** | SSL · `limit_req` zona `evo_prospia` · `/manager` com `allow` + `deny all` |
+
+**Sao QUATRO Evolutions agora, nao tres:**
+
+| Container | Porta | Dominio | Instancias |
+|---|---|---|---|
+| `movisat_evolution` | 8081 | `evolution.movisat.com.br` (fechado por IP) | `atendimento`, `informativos`, `prospeccao` |
+| `movisat_evolution_nina` | 8082 | `nina.movisat.com.br` | `nina` |
+| `movisat_evolution_prosp` | 8083 | `prospeccao.movisat.com.br` | `prospect` ("Prospecta-Completa"), `prospecta-ai` (velha) |
+| `movisat_evolution_prospia` | **8084** | `prospeccaoia.movisat.com.br` | **vazia, esperando numero** |
+
+🚨 **POR QUE A SEPARACAO FOI FEITA, E O QUE ELA NAO RESOLVE.** As duas
+instancias do 8083 (`prospect` e `prospecta-ai`) disputavam o **mesmo chip**
+`...9847`, e quem conecta por ultimo derruba o outro: medido em 02/09, a
+`prospecta-ai` caiu com `401 device_removed / conflict`. **Container separado
+isola chave, banco, cache e raio de estrago -- NAO desfaz o conflito de
+numero.** So chip proprio desfaz. O container novo esta vazio de proposito
+ate esse numero existir.
+
+**Isolamento medido em 18/09**, mesmo criterio do teste de 07/08:
+
+```
+prospeccaoia + chave nova   -> 200, 0 instancias
+prospeccaoia + chave velha  -> 401
+prospeccao   + chave velha  -> 200, 2 instancias
+prospeccao   + chave nova   -> 401
+```
+
+Banco `evolution_prospia_db` (usuario proprio), Redis db **4** (1=movizap,
+2=nina, 3=prosp), volume `evolution_prospia_data`, chave em
+`/home/claude/evolution_prospia/.env` (`0600`).
+
+🚨 **ERRO MEU NA MONTAGEM, REGISTRADO PARA NAO SE REPETIR:** criei o banco com
+`docker exec -e PGPASSWORD=<valor>` e `psql -c "CREATE USER ... PASSWORD
+'<valor>'"`. O shell expande antes de executar, entao **a senha do
+superusuario do Postgres e a do banco novo foram para argv** -- que o
+`auditd` grava. E a mesma armadilha ja documentada no Bloco 1 do
+`Proximos_Passos` ("auditar segredo e codigo, nao one-liner"). O certo era um
+script lendo o `.env` dentro do processo. **Rotacao da senha do Postgres e
+decisao dele; nao foi feita.**
+
+### 18/09 (fim do dia) — o PADRAO de webhook e a limpeza das instancias
+
+🔵 **Pedido dele:** *"a situacao deve ser a real deles e nao a que colocar, e
+deve ter padrao na configuracao de connection"*.
+
+**O padrao, em dois niveis.** Antes cada instancia tinha a lista que o app
+dela pediu, e ninguem comparava:
+
+| Nivel | Eventos | Regra |
+|---|---|---|
+| **Operacional — obrigatorio em TODA instancia** | `CONNECTION_UPDATE`, `QRCODE_UPDATED` | sao sobre a CONEXAO, nao sobre conteudo |
+| **Conteudo — por produto** | `MESSAGES_UPSERT` no minimo; `MESSAGES_UPDATE`, `MESSAGES_DELETE`, `SEND_MESSAGE` conforme a funcao do outro lado trate | depende do app consumidor |
+
+🚨 **POR QUE O OPERACIONAL E OBRIGATORIO.** Sem `CONNECTION_UPDATE` ninguem
+fica sabendo que a instancia caiu. Foi exatamente o que aconteceu com a
+`prospecta-ai`: caiu em 02/09 com `401 device_removed` e ficou **16 dias**
+desconectada sem ninguem perceber. Evento de volume baixissimo -- so dispara
+quando o estado muda.
+
+**Estado final, medido depois dos ajustes:**
+
+| Porta | Instancia | Estado | Operacional | Eventos |
+|---|---|---|---|---|
+| 8081 | `atendimento` | open | OK | 6 |
+| 8081 | `informativos` | open | OK | 6 |
+| 8082 | `nina` | connecting | OK | 4 |
+| 8083 | `prospect` | open | OK | 4 |
+| 8084 | `prospecta-ai` | connecting | OK | 4 |
+
+**Sao 5 instancias, nao 7.** Duas foram apagadas em 18/09, autorizadas por
+ele, cada uma com guarda tripla (confere que o alvo nao esta `open`, salva o
+registro em JSON, reconfere as vivas depois):
+
+1. **`prospecta-ai` do 8083** -- disputava o chip `...7447` com a `prospect`.
+   Registro em `evolution_prosp/prospecta-ai_antes_de_apagar_2026-09-18.json`.
+2. **`prospeccao` do 8081** -- entulho da fase antiga, dentro do container de
+   PRODUCAO, ao lado do `atendimento`: nunca conectou, webhook desligado,
+   zero eventos. Registro em
+   `movizap_painel/prospeccao_antes_de_apagar_2026-09-18.json`.
+   Conferido depois: `atendimento` e `informativos` seguem `open`, e o painel
+   responde 200.
+
+⚠️ **A `nina` alterna sozinha entre `close` e `connecting`**: e o Evolution
+retentando periodicamente uma sessao invalidada em 02/09. Nao e pendencia nem
+residuo de comando -- e o comportamento normal de instancia com credencial
+morta. Ela so para quando alguem parear de novo ou quando a instancia for
+apagada.
+
+⚠️ **O ajuste da `prospecta-ai` (8084) pode ser desfeito pelo app**: foi ele
+quem escreveu o webhook com 1 evento so, as 15:24 de 18/09. Se um deploy dele
+reescrever a configuracao, volta a divergir. O conserto duradouro e no app.
