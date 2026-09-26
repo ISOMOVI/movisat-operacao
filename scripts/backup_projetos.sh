@@ -77,6 +77,8 @@ empacotar fpsl_weso
 empacotar suntech-diag
 empacotar IA_agente_Movichat
 empacotar movizap_painel
+# 25/09 (Plano 5): as gravacoes do MicroSIP. A midia do WhatsApp fica de fora por decisao dele.
+empacotar movizap_ligacoes
 
 # 🚨 NOVO EM 07/08: projeto de prospeccao (webhook da Cloud API da Meta).
 # Ainda NAO tem repositorio git -- depende de o usuario criar o remoto na
