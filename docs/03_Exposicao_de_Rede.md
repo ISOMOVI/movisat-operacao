@@ -54,6 +54,7 @@ nada no dia a dia aponta para ela — só um teste **de fora da VPS** revela.
 | Site | Porta interna | Proteção |
 |---|---|---|
 | `movizap.movisat.com.br` | 8008 | SSL · `limit_req` 4 zonas · nega `.bak`/`.env`/`.py` |
+| `forms.movisat.com.br` | 8008 | SSL · **só 3 caminhos; o resto 403** · `limit_req` 2 zonas **(22/10)** |
 | `fpsl.movisat.com.br` | 8004 | SSL · `limit_req` no login |
 | `movichat.movisat.com.br` | 8002 | SSL · `limit_req` 3 zonas |
 | `ia-agente-movichat` | 8002 | `limit_req` 3 zonas |
@@ -315,3 +316,48 @@ apagada.
 ⚠️ **O ajuste da `prospecta-ai` (8084) pode ser desfeito pelo app**: foi ele
 quem escreveu o webhook com 1 evento so, as 15:24 de 18/09. Se um deploy dele
 reescrever a configuracao, volta a divergir. O conserto duradouro e no app.
+
+---
+
+## 22/10 — um domínio PÚBLICO novo: `forms.movisat.com.br`
+
+Os formulários próprios do MoviZap (os 15 que substituem os Bitrix24 Webforms)
+são **abertos, sem login**: é o desenho, não um descuido — o link vai para o
+cliente por WhatsApp e por e-mail.
+
+**O mesmo serviço do painel** (127.0.0.1:8008), **domínio diferente**, e é o
+nginx que separa os dois mundos:
+
+| caminho | o que é |
+|---|---|
+| `/f/<slug>` | a página do formulário (bundle próprio, **sem sourcemap**) |
+| `/pub/assets/…` | o bundle dessa página |
+| `/api/publico/…` | a definição e o envio |
+| **todo o resto** | **403**, antes de chegar ao FastAPI — a raiz dá 404 |
+
+🚨 **POR QUE O 403 GENÉRICO É A PEÇA PRINCIPAL:** se amanhã alguém
+acrescentar uma rota sem permissão no `main.py`, ela **não nasce exposta neste
+domínio**. A conferência de fora, em 22/10: `/f/ces` → 200,
+`/api/publico/formulario/ces` → 200, `/api/conversas` → **403**, `/inicio` →
+**403**, `/api/solicitacoes/1/arquivo/1` → **403**, `/` → 404.
+
+🚨 **O ANEXO NÃO SAI POR AQUI.** Quem envia arquivo é a internet; quem o lê é a
+casa, pela rota autenticada do painel. Os arquivos ficam em
+`/home/claude/movizap_formularios_anexos`, **modo 700**, fora do projeto e fora
+do `dist` — e em backup desde 22/10 (`movizap_painel/scripts/backup_midia.sh`,
+que passou a espelhar duas pastas).
+
+**Limites por IP:** zona `mz_forms` (30 r/m) no POST e `mz_pages` (60 r/m) nas
+páginas, mais as defesas do próprio app — isca, tempo mínimo de 3 s entre abrir
+e enviar, contagem de envios por IP, e a conta de somar só depois de 5 envios
+na mesma hora. ⚠️ **Nenhuma delas bloqueia para sempre**: o pior caso de um
+falso positivo é a pessoa responder "3 + 4".
+
+**Arquivos:** `/etc/nginx/sites-available/forms.movisat.com.br.conf` ·
+certificado próprio (`certbot`, expira 2027-01-20) · a zona nova está no
+`/etc/nginx/nginx.conf`, ao lado das do MoviZap.
+
+⚠️ **Dois formulários que no Bitrix tinham reCAPTCHA** (ficha cadastral e
+financeiras) estão no ar sem ele, defendidos só pelas quatro camadas acima.
+Se aparecer abuso, o interruptor em `/config › Geral` passa a pedir a conta em
+**todo** envio.
