@@ -361,3 +361,50 @@ certificado próprio (`certbot`, expira 2027-01-20) · a zona nova está no
 financeiras) estão no ar sem ele, defendidos só pelas quatro camadas acima.
 Se aparecer abuso, o interruptor em `/config › Geral` passa a pedir a conta em
 **todo** envio.
+
+---
+
+## 26/10 — DEPENDÊNCIA EXTERNA: com quem a VPS fala PARA FORA (e qual delas custa)
+
+🚨 **ESTA SEÇÃO EXISTE PORQUE ELE PERGUNTOU *"tudo documentado?"* E A RESPOSTA
+ERA NÃO.** Este documento inteiro, desde 11/08, responde *"o que está ABERTO, e
+por quê"* — exposição **de entrada**. E estava completo nisso. O que não existia
+em lugar nenhum era o inverso: **com quem a VPS fala para fora**.
+
+Até 26/10 isso não doía, porque todas as saídas eram **de graça** e nenhuma
+podia parar de funcionar por falta de pagamento. Hoje uma passou a **custar por
+consulta**, e dependência paga que ninguém sabe que existe é a que aparece numa
+fatura meses depois sem explicação.
+
+### As saídas, medidas no código em 26/10
+
+| destino | quem chama | para quê | custa? | cai e o que acontece |
+|---|---|---|---|---|
+| `viacep.com.br` | `movizap/cep.py` | o endereço de um CEP | **não** | 🚨 Três respostas distinguíveis: achou · **não existe** · **não deu para perguntar**. Juntar as duas últimas faria a tela chamar de errado um CEP certo. A tela cai no preenchimento à mão |
+| `routes.googleapis.com` | `movizap/rotas.py` | a distância rodada entre dois endereços (calculadora de KM) | 🚨 **SIM, por consulta** | `disponivel()` é `False` sem chave, e a tela **diz por quê**: o km fica manual e o **link do Google** (sem API, custo zero) segue funcionando |
+| `accounts.google.com` · `oauth2.googleapis.com` | `movizap/google_auth.py` | o login pelo Google e a renovação do token | não | ninguém entra no painel por Google; a senha local continua |
+| `gmail.googleapis.com` · `www.googleapis.com` | `movizap/gmail.py`, `movizap/agenda.py` | ler/enviar e-mail e ler a agenda | não | a aba de E-mail e a Início param de atualizar; o WhatsApp não é afetado (*"jamais misturemos whatsapp com gmail"*) |
+| `api.deepseek.com` · Groq | o gateway de IA | a IA de atendimento | sim, por token | **a IA está suspensa por ele**, então ninguém sente |
+| Evolution (local, `localhost:8081`) | `movizap/evolution.py` | o WhatsApp | não | 🚨 é o único que, caindo, **para o atendimento** — e por isso não é "externo" de verdade: roda nesta VPS |
+
+### 🚨 O que isto muda na prática
+
+1. **Uma dependência paga tem de ser DESLIGÁVEL sem quebrar a tela**, e a de
+   hoje é: chave vazia = cálculo desligado, a tela explica, e o caminho
+   gratuito (o link do Google, que abre a rota no navegador da pessoa) continua
+   lá. Foi escolha de desenho, não sobra.
+2. **O caminho gratuito é o principal**, não o reserva. O número vem da **mesma
+   fonte que ele já confere à mão**, e quem lê o número que vai ao orçamento é
+   uma pessoa.
+3. **Nenhuma saída leva segredo no caminho da URL.** A chave da Routes API vai
+   no **cabeçalho** (`X-Goog-Api-Key`), nunca na URL — URL entra em log de
+   proxy, e foi exatamente assim que o segredo do Evolution vazou 2.527 vezes
+   por dia até 12/08.
+4. **Erro de serviço externo não imprime o corpo da resposta.** Ela pode
+   repetir a requisição, e a requisição carrega endereço de cliente. Só o
+   código HTTP vai para o log.
+
+⚠️ **Como manter isto honesto:** a lista sai de
+`grep -roE 'https://[a-z0-9.\-]+/' movizap/*.py`. Serviço externo novo entra
+**aqui**, com a coluna *"cai e o que acontece"* preenchida — porque é essa
+coluna que alguém vai procurar às três da manhã.
