@@ -408,3 +408,80 @@ fatura meses depois sem explicação.
 `grep -roE 'https://[a-z0-9.\-]+/' movizap/*.py`. Serviço externo novo entra
 **aqui**, com a coluna *"cai e o que acontece"* preenchida — porque é essa
 coluna que alguém vai procurar às três da manhã.
+﻿
+---
+
+## 11/11 — porta **8090** aberta: a prévia do SAC novo
+
+🔵 Autorização dele, 11/11: *"se precisar pode usar o root para subir uma porta
+e me de o IP do site novo"*.
+
+| o quê | valor |
+|---|---|
+| porta | **8090/tcp**, `ALLOW Anywhere` (v4 e v6) |
+| regra no ufw | comentada: *"Previa do SAC novo (clone) -- fechar quando virar o DNS"* |
+| server | `/etc/nginx/sites-available/sac_clone.conf` |
+| raiz | `/home/claude/sac_clone` (HTML estático + 11 imagens) |
+| endereço | `http://212.85.17.184:8090/` |
+
+🚨 **ESTÁ ABERTA PARA A INTERNET, e é o que ele pediu** — ele precisa abrir no
+navegador dele. O que limita o dano:
+
+1. **`X-Robots-Tag: noindex, nofollow`** em todas as respostas, inclusive nos
+   `location` (⚠️ `add_header` dentro de `location` **substitui** os do
+   `server`, não soma — por isso estão repetidos em cada bloco);
+2. **a superfície é a mesma três do `forms`** e nada mais: `/f/`,
+   `/pub/assets/`, `/api/publico/`. ✅ Conferido de fora:
+   `/api/solicitacoes` → **404**, `/index.html.bak` → **404**;
+3. **os mesmos limites de taxa** do host dos formulários (`mz_forms`,
+   `mz_pages`) e o mesmo teto de corpo (25 MB);
+4. **nada novo escuta**: o proxy vai para o `127.0.0.1:8008` que já existia.
+
+⚠️ **O que esta porta ACRESCENTA de superfície:** o formulário público passa a
+ter um **segundo endereço** (`:8090/f/<slug>`), onde ele é **embutível**
+(`SAMEORIGIN`). 🚨 O `forms.movisat.com.br` segue com **`DENY`** — conferido
+depois de subir. Então o que existe é um host a mais, com `noindex`, que a
+própria casa controla; não é um afrouxamento do host público.
+
+🔴 **A fechar quando o DNS virar:** `ufw delete` da regra 8090 e o `server`
+passa a escutar 80/443 no `sac.movisat.com.br`, com certificado.
+
+---
+
+## 11/11 — uma rota PÚBLICA nova: `/api/publico/convite/{bilhete}`
+
+🔵 Entrou com a migração 107 (o formulário pré-preenchido pelo link). Ela é
+**sem login**, porque é a página do cliente que a chama e essa página não tem
+sessão.
+
+**O que ela devolve:** `{slug, valores}` daquele convite, e **nada além**.
+
+### 🚨 Por que ela EXISTE em vez de os dados irem na URL
+
+Era possível não ter rota nenhuma: `/f/suporte?cnpj=...&telefone=...`
+pré-preencheria sozinho. 🚨 **E poria dado de cliente no endereço**, que entra
+no **`access.log` do nginx** (que grava a linha de requisição inteira, com a
+query string), no **histórico do navegador** de quem abriu, no `Referer` de
+qualquer recurso que a página carregue, e em **qualquer repasse do link**.
+⚠️ Base64 não resolveria: esconde do olho, não do log.
+
+Então a rota existe justamente para que a **URL não carregue nada** além de um
+bilhete opaco.
+
+### O que protege a rota
+
+| trava | o que faz |
+|---|---|
+| `secrets.token_urlsafe(16)` | ~128 bits de bilhete, `UNIQUE`, **não deriva do `id` nem da data** — conhecer um convite não ajuda a achar outro |
+| `expira_em` | 7 dias. Bilhete velho **some** |
+| formulário desligado | o convite para de responder junto com o formulário |
+| a MESMA frase de 404 | *"Este link não vale mais."* para inexistente, vencido e formulário desligado. Distinguir contaria de fora quais convites existiram |
+| filtro pela definição viva | devolve só valores de campos que **existem hoje** naquele formulário |
+
+⚠️ **O que ela NÃO tem, e é decisão a rever se virar incômodo:** limite de taxa
+próprio. Ela cai no `mz_forms` do host, como as outras rotas públicas.
+🟡 Com 128 bits de bilhete, adivinhar não é o caminho de ataque; o caminho é o
+**link repassado**, e contra esse o remédio é o prazo.
+
+⚠️ **E ela MARCA a abertura** (`aberto_em`, `aberturas`), então o banco sabe
+quantas vezes um link foi aberto. Isso é rastro de uso, não de conteúdo.
