@@ -100,6 +100,20 @@ empacotar imagohub/diagnostico-vibe
 empacotar imagohub/concorrentes
 empacotar imagohub/jurisprudencia
 
+# 🚨 NOVOS EM 12/11: o SAC. Ele virou o DNS de sac.movisat.com.br para esta
+# VPS e disse *"o sac antigo nao ira mais existir nunca"* -- e com isso
+# `sac_clone_fonte` passou a ser a UNICA copia do SAC da Movisat: o export do
+# Bitrix24, os dois scripts que o transformam em site e as 11 imagens.
+#
+# ⚠️ AS DUAS PASTAS, e nao so a fonte: `sac_clone` e o que o nginx serve, e e
+# producao desde a virada. Regerar da fonte funciona -- foi provado em 12/11 --
+# mas depender de reconstruir no dia ruim nao vale os 932K economizados.
+#
+# 🚨 Nenhuma das duas tem git, pelo mesmo motivo da `prospeccao`: depende de
+# ele criar o remoto. Ate la, este backup e a unica rede.
+empacotar sac_clone_fonte
+empacotar sac_clone
+
 # 🚨 A rede de protecao tambem precisa de rede. `scripts/` guarda o gate de
 # segredo, este proprio backup e as ferramentas de auditoria; `docs/` guarda a
 # documentacao transversal.
